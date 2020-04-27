@@ -232,7 +232,7 @@ static int DecryptPRX1(const u8* pbIn, u8* pbOut, int cbTotal, u32 tag)
 	TAG_INFO const* pti = GetTagInfo(tag);
     if (!pti)
 	{
-		printf("Unknown tag 0x%08X.\n", pti);
+		printf("Unknown tag 0x%08X.\n", tag);
 		return -1;
 	}
 
