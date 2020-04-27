@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <byteswap.h>
 #include <kirk_engine.h>
 
 unsigned char buffer[10000000] __attribute__((aligned(64)));
@@ -15,6 +16,8 @@ unsigned char buffer[10000000] __attribute__((aligned(64)));
 ////////// Decryption 1 //////////
 
 // use pre-calculated keys (step1 results)
+
+u32 elf_size;
 
 u32 g_key0[] =
 {
@@ -232,10 +235,11 @@ static int DecryptPRX1(const u8* pbIn, u8* pbOut, int cbTotal, u32 tag)
 	TAG_INFO const* pti = GetTagInfo(tag);
     if (!pti)
 	{
-		printf("Unknown tag 0x%08X.\n", tag);
+		//printf("Unknown tag 0x%08X.\n", tag);
 		return -1;
 	}
 
+	elf_size = *(u32*)&pbIn[0x28];
 	retsize = *(u32*)&pbIn[0xB0];
 
 	for (i = 0; i < 0x14; i++)
@@ -517,7 +521,7 @@ u8 keys500_1[16] =
 	0x64, 0xA5, 0x11, 0x85, 0xF7, 0x2F, 0x99, 0x5B
 };
 
-/* 5.00 kernel 3000 specific */
+/* 5.00 kernel 0xBB8 specific */
 u8 keys500_2[16] = 
 {
 	0x2C, 0x8E, 0xAF, 0x1D, 0xFF, 0x79, 0x73, 0x1A, 
@@ -555,7 +559,7 @@ u8 keys02G_E[0x10] =
 	0x0D, 0xB2, 0x6F, 0x00, 0xCC, 0xC5, 0x51, 0x2E
 };
 
-/* for psp 3000 file table and ipl pre-decryption */
+/* for psp 0xBB8 file table and ipl pre-decryption */
 u8 keys03G_E[0x10] = 
 {
 	0x4F, 0x44, 0x5C, 0x62, 0xB3, 0x53, 0xC4, 0x30, 
@@ -814,6 +818,7 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		return -1;
 	}	
 
+	elf_size = *(u32*)&inbuf[0x28];
 	int retsize = *(int *)&inbuf[0xB0];
 	u8	tmp1[0x150], tmp2[0x90+0x14], tmp3[0x60+0x14], tmp4[0x20];
 
@@ -899,7 +904,7 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 	
 	/* sha-1 */
 
-	if (sceUtilsBufferCopyWithRange(outbuf, 3000000, outbuf, 3000000, 0x0B) != 0)
+	if (sceUtilsBufferCopyWithRange(outbuf, 0xBB8000, outbuf, 0xBB8000, 0x0B) != 0)
 	{
 		printf("Error in sceUtilsBufferCopyWithRange 0xB.\n");
 		return -7;
@@ -1013,6 +1018,26 @@ void hexDump(const void *data, size_t size) {
   printf("\n");
 }
 
+u8 gzip_magic[4] = {
+	0x1F, 0x8B, 0x08, 0x00
+};
+
+u8 kl4e_magic[4] = {
+	0x4B, 0x4C, 0x34, 0x45
+};
+
+u8 kl3e_magic[4] = {
+	0x4B, 0x4C, 0x33, 0x45
+};
+
+u8 elf_magic[4] = {
+	0x7F, 0x45, 0x4C, 0x46
+};
+
+u8 bin_ext[4] = {
+	0x2E, 0x62, 0x69, 0x6E
+};
+
 int DecryptFile(char *input, char *output)
 {
 	printf("Decrypting %s to %s.\n", input, output);
@@ -1026,8 +1051,6 @@ int DecryptFile(char *input, char *output)
 		return -1;
 	}
 
-	printf("Trying decryption\n");
-
 	int res = pspDecryptPRX(buffer, buffer, size);
 
 	if (res < 0)
@@ -1037,11 +1060,61 @@ int DecryptFile(char *input, char *output)
 		return -1;
 	}
 
-	if (WriteFile(output, buffer, res) != res)
-	{
-		printf("Error writing/creating %s.\n", output);
-		return -1;
+	if(memcmp(buffer,gzip_magic,4)==0){
+		char str[256];
+		sprintf(str,"%s.gz", output);
+		if (WriteFile(str, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", str);
+			return -1;
+		}
+
+		FILE*fp;
+		char str2[256];
+		sprintf(str2,"gzip -df %s", str);
+		fp = popen(str2, "w");
+		pclose(fp);
 	}
+	
+	if(memcmp(buffer,kl4e_magic,4)==0){
+		char str[256];
+		sprintf(str,"%s.kl4e", output);
+		if (WriteFile(str, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", str);
+			return -1;
+		}
+	}
+
+	if(memcmp(buffer,kl3e_magic,4)==0){
+		char str[256];
+		sprintf(str,"%s.kl3e", output);
+		if (WriteFile(str, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", str);
+			return -1;
+		}
+	}
+	
+	if(memcmp(buffer,elf_magic,4)==0){
+		if (WriteFile(output, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", output);
+			return -1;
+		}
+	}
+	
+	int len = strlen(input);
+	const char *last_four = &input[len-4];
+	
+	if(memcmp(last_four,bin_ext,4)==0){
+		if (WriteFile(output, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", output);
+			return -1;
+		}
+	}
+	
 
 	return 0;
 }
@@ -1057,7 +1130,7 @@ int main(int argc, char** argv)
 	
 	DecryptFile(argv[1], argv[2]);
 
-	printf("Done!\n");
+	
 
 	return 0;
 }
