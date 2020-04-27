@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <kirk_engine.h>
 
-unsigned char buffer[0x1000000];
+unsigned char buffer[10000000] __attribute__((aligned(64)));
 
 ////////// Decryption 1 //////////
 
@@ -152,7 +152,7 @@ static const TAG_INFO g_tagInfo[] =
     { 0x0b000000, updaters_keys, 0x4E },
 	
 	// locoroco, kazue, demos	
-	{ 0x0c000000, demo_keys0, 0x4F },
+    { 0x0c000000, demo_keys0, 0x4F },
 };
 
 u32 g_counter =1;
@@ -415,8 +415,8 @@ u8 keys310_2[0x10] =
 /* reboot.bin 3.10 */
 u8 keys310_3[0x10] =
 {
-    0x2E, 0x00, 0xF6, 0xF7, 0x52, 0xCF, 0x95, 0x5A,
-    0xA1, 0x26, 0xB4, 0x84, 0x9B, 0x58, 0x76, 0x2F
+         0x2E, 0x00, 0xF6, 0xF7, 0x52, 0xCF, 0x95, 0x5A,
+         0xA1, 0x26, 0xB4, 0x84, 0x9B, 0x58, 0x76, 0x2F
 };
 
 /* kernel modules 3.30 */ 
@@ -964,18 +964,11 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 
 static int _pspDecryptPRX(u8 *inbuf, u8 *outbuf, u32 size)
 {
-	u8 *in = (u8*) malloc (size);
-	u8 *out = (u8*) malloc (size);
-	u32 size2 = size;
-	
-	memcpy(in, inbuf,size2);
-	memcpy(out, outbuf,size2);
-
 	int retsize = DecryptPRX1(inbuf, outbuf, size, *(u32 *)&inbuf[0xD0]);
 
 	if (retsize <= 0)
 	{
-		retsize = DecryptPRX2(in, out, size2, *(u32 *)&in[0xD0]);
+		retsize = DecryptPRX2(inbuf, outbuf, size, *(u32 *)&inbuf[0xD0]);
 	}
 
 	return retsize;
