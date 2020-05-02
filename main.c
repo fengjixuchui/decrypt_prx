@@ -1121,12 +1121,16 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		return -1;
 	}	
 
-	elf_size = *(u32*)&inbuf[0x28];
+	//elf_size = *(u32*)&inbuf[0x28];
 	int retsize = *(int *)&inbuf[0xB0];
-	u8	tmp1[0x150], tmp2[0x90+0x14], tmp3[0x60+0x14], tmp4[0x20];
+	u8 tmp1[0x150] = { 0 };
+	u8* tmp2 = (u8*)malloc(0x90+0x14);
+	//u8 tmp2[0x90+0x14] = { 0 };
+	u8 tmp3[0x60+0x14] = { 0 };
+	u8 tmp4[0x20] = { 0 };
 
 	memset(tmp1, 0, 0x150);
-	memset(tmp2, 0, 0x90+0x14);
+	memset(tmp2, 0, 0x90+0x14);  //buf_2
 	memset(tmp3, 0, 0x60+0x14);
 	memset(tmp4, 0, 0x20);
 
@@ -1200,19 +1204,19 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		memset(outbuf+0x18, 0, 0x38);
 	}else
 		memset(outbuf+0x18, 0, 0x58);
-	
+
 	memcpy(outbuf+0x04, outbuf, 0x04);
 	*((u32 *)outbuf) = 0x014C;
+
 	memcpy(outbuf+0x08, tmp2, 0x10);
-	
+
 	/* sha-1 */
 
-	if (sceUtilsBufferCopyWithRange(outbuf, 0xBB8000, outbuf, 0xBB8000, 0x0B) != 0)
+	if (sceUtilsBufferCopyWithRange(outbuf, 0x150, outbuf, 0x150, 0x0B) != 0)
 	{
 		printf("Error in sceUtilsBufferCopyWithRange 0xB.\n");
 		return -7;
 	}
-
 
 	if (memcmp(outbuf, tmp3, 0x14) != 0)
 	{
@@ -1322,8 +1326,8 @@ void hexDump(const void *data, size_t size) {
   printf("\n");
 }
 
-u8 gzip_magic[4] = {
-	0x1F, 0x8B, 0x08, 0x00
+u8 gzip_magic[3] = {
+	0x1F, 0x8B, 0x08
 };
 
 u8 kl4e_magic[4] = {
@@ -1364,7 +1368,7 @@ int DecryptFile(char *input, char *output)
 		return -1;
 	}
 
-	if(memcmp(buffer,gzip_magic,4)==0){
+	if(memcmp(buffer,gzip_magic,3)==0){
 		char str[256];
 		sprintf(str,"%s.gz", output);
 		if (WriteFile(str, buffer, res) != res)
