@@ -366,7 +366,7 @@ static int DecryptPRX1(const u8* pbIn, u8* pbOut, int cbTotal, u32 tag)
 	TAG_INFO const* pti = GetTagInfo(tag);
     if (!pti)
 	{
-		//printf("Unknown tag 0x%08X.\n", tag);
+		printf("Unknown tag 0x%08X.\n", tag);
 		return -1;
 	}
 
@@ -1066,14 +1066,10 @@ static TAG_INFO2 g_tagInfo2[] =
     { 0x4C9429F0, key_4C9429F0, 0x43 }, //5.70 PSPgo
     { 0x4C9428F0, key_4C9428F0, 0x43 }, //5.70 PSP-3000 03g, 04g
     { 0x4C9422F0, key_4C9422F0, 0x43 }, //6.00 PSP-3000 03g, 04g
-    { 0x4C9421F0, key_4C9421F0, 0x43 }, //5.55/5.70 PSP-3000 FAKE
-    { 0x4C9420F0, key_4C9420F0, 0x43 }, //5.05 PSP-3000 FAKE
     { 0x4C941FF0, key_4C941FF0, 0x43 }, //5.00 PSP-3000
     { 0x4C941EF0, key_4C941EF0, 0x43 }, //PSP-3000
     { 0x4C941DF0, key_4C941DF0, 0x43 }, //6.00 PSP-2000
     { 0x4C941CF0, key_4C941CF0, 0x43 }, //6.00 PSP-1000
-    { 0x4C941BF0, key_4C941BF0, 0x43 }, //5.55 PSP-2000 FAKE
-    { 0x4C941AF0, key_4C941AF0, 0x43 }, //5.55 PSP-1000 FAKE
     { 0x4C9419F0, key_4C9419F0, 0x43 }, //5.05 PSP-2000
     { 0x4C9418F0, key_4C9418F0, 0x43 }, //5.05 PSP-1000
     { 0x4C9417F0, key_4C9417F0, 0x43 }, //5.00 PSP-2000
@@ -1111,8 +1107,6 @@ static TAG_INFO2 *GetTagInfo2(u32 tagFind)
 
 static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 {
-	//printf("GetTagInfo2\n");
-	
 	TAG_INFO2 * pti = GetTagInfo2(tag);
 
 	if (!pti)
@@ -1121,16 +1115,11 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		return -1;
 	}	
 
-	//elf_size = *(u32*)&inbuf[0x28];
 	int retsize = *(int *)&inbuf[0xB0];
-	u8 tmp1[0x150] = { 0 };
-	u8* tmp2 = (u8*)malloc(0x90+0x14);
-	//u8 tmp2[0x90+0x14] = { 0 };
-	u8 tmp3[0x60+0x14] = { 0 };
-	u8 tmp4[0x20] = { 0 };
+	u8	tmp1[0x150], tmp2[0x90+0x14], tmp3[0x60+0x14], tmp4[0x20];
 
 	memset(tmp1, 0, 0x150);
-	memset(tmp2, 0, 0x90+0x14);  //buf_2
+	memset(tmp2, 0, 0x90+0x14);
 	memset(tmp3, 0, 0x60+0x14);
 	memset(tmp4, 0, 0x20);
 
@@ -1204,14 +1193,13 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		memset(outbuf+0x18, 0, 0x38);
 	}else
 		memset(outbuf+0x18, 0, 0x58);
-
+	
 	memcpy(outbuf+0x04, outbuf, 0x04);
 	*((u32 *)outbuf) = 0x014C;
-
 	memcpy(outbuf+0x08, tmp2, 0x10);
-
+	
 	/* sha-1 */
-
+/*
 	if (sceUtilsBufferCopyWithRange(outbuf, 0x150, outbuf, 0x150, 0x0B) != 0)
 	{
 		printf("Error in sceUtilsBufferCopyWithRange 0xB.\n");
@@ -1223,7 +1211,7 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		printf("SHA-1 is incorrect.\n");
         return -8;
 	}
-
+*/	
 	int iXOR;
 
 	for (iXOR = 0; iXOR < 0x40; iXOR++)
