@@ -1199,7 +1199,7 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 	memcpy(outbuf+0x08, tmp2, 0x10);
 	
 	/* sha-1 */
-/*
+
 	if (sceUtilsBufferCopyWithRange(outbuf, 0x150, outbuf, 0x150, 0x0B) != 0)
 	{
 		printf("Error in sceUtilsBufferCopyWithRange 0xB.\n");
@@ -1211,7 +1211,7 @@ static int DecryptPRX2(const u8 *inbuf, u8 *outbuf, u32 size, u32 tag)
 		printf("SHA-1 is incorrect.\n");
         return -8;
 	}
-*/	
+	
 	int iXOR;
 
 	for (iXOR = 0; iXOR < 0x40; iXOR++)
