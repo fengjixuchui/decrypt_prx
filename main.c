@@ -1383,6 +1383,15 @@ int DecryptFile(char *input, char *output)
 			return -1;
 		}
 	}
+	if(memcmp(buffer,"2RLZ",4)==0){
+		char str[256];
+		sprintf(str,"%s.2rlz", output);
+		if (WriteFile(str, buffer, res) != res)
+		{
+			printf("Error writing/creating %s.\n", str);
+			return -1;
+		}
+	}
 
 	if(memcmp(buffer,kl3e_magic,4)==0){
 		char str[256];
