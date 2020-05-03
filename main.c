@@ -10,8 +10,10 @@
 #include <unistd.h>
 #include <byteswap.h>
 #include <kirk_engine.h>
+#include <tlzrc.h>
 
 unsigned char buffer[10000000] __attribute__((aligned(64)));
+unsigned char buffer_out[10000000] __attribute__((aligned(64)));
 u32 elf_size;
 
 ////////// Decryption 1 //////////
