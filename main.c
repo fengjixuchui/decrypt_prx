@@ -1369,7 +1369,7 @@ int DecryptFile(char *input, char *output)
 
 		FILE*fp;
 		char str2[256];
-		sprintf(str2,"gzip -df %s", str);
+		sprintf(str2,"gzip -dqf %s", str);
 		fp = popen(str2, "w");
 		pclose(fp);
 	}
